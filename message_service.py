@@ -5,12 +5,12 @@ import psycopg2
 
 dsn = "host={} dbname={} user={} password={}".format("localhost", "messagedb", "postgres", "meowmeow")
 
-def send_message(dsc, identifier, message, recipient):
+def send_message(dsc, id, message, recipient):
     print("Sending message...")
     try:
         cur = dsc.cursor()
         pg_insert_query = """ INSERT INTO messages (ID, MESSAGE, RECIPIENT) VALUES (%s,%s,%s)"""
-        record_to_insert = (identifier, message, recipient)
+        record_to_insert = (id, message, recipient)
         cur.execute(pg_insert_query, record_to_insert)
         dsc.commit()
         count = cur.rowcount
@@ -75,10 +75,10 @@ def disconnect(dsc):
 def main():
     dsc = connect(dsn)
     list_messages(dsc)
-    # send_message(dsc, 1, "This is a test message.", "Kosmo Kramer")
-    # send_message(dsc, 2, "This is a test send.", "kk@gmail.com")
-    # send_message(dsc, 3, "This is a test communication.", "1234567890")
-    # send_message(dsc, 4, "This is a test action.", "user_name_kosmo78")
+    # send_message(dsc, 5, "This is a test message1.", "Kosmo Kramer")
+    # send_message(dsc, 6, "This is a test send1.", "kk@gmail.com")
+    # send_message(dsc, 7, "This is a test communication1.", "1234567890")
+    # send_message(dsc, 8, "This is a test action1.", "user_name_kosmo78")
     # list_messages(dsc)
     disconnect(dsc)
 
