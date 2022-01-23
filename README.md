@@ -16,9 +16,11 @@ postgres=# CREATE DATABASE messagedb;
 CREATE DATABASE
 postgres=#\q
 
+postgres=# \c messagedb;
+
 CREATE TABLE messages (
-	id serial PRIMARY KEY,
-	message VARCHAR ( 50 ) UNIQUE NOT NULL,
+	id serial PRIMARY KEY NOT NULL,
+	message VARCHAR ( 50 ) NOT NULL,
 	recipient VARCHAR ( 50 ) NOT NULL
 );
 

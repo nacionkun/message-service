@@ -4,20 +4,21 @@
 import psycopg2
 
 dsn = "host={} dbname={} user={} password={}".format("localhost", "messagedb", "postgres", "meowmeow")
+pg_insert_query = """ INSERT INTO messages (ID, MESSAGE, RECIPIENT) VALUES (%s,%s,%s)"""
 
-def send_message(dsc, id, message, recipient):
+def send_message(dsc, message, recipient):
     print("Sending message...")
     try:
         cur = dsc.cursor()
-        pg_insert_query = """ INSERT INTO messages (ID, MESSAGE, RECIPIENT) VALUES (%s,%s,%s)"""
+        # TODO fetch id of last row before doing an insert
         record_to_insert = (id, message, recipient)
         cur.execute(pg_insert_query, record_to_insert)
         dsc.commit()
         count = cur.rowcount
-        print(count, "Record inserted successfully into messages table")
+        print(count, "Record inserted successfully into messages table.")
 
     except (Exception, psycopg2.Error) as error:
-        print("Failed to insert record into messages table", error)
+        print("Failed to insert record into messages table!", error)
 
     finally: 
         cur.close()
@@ -44,6 +45,15 @@ def list_messages(dsc):
 
     finally:
         cur.close()
+
+def fetch_last_message(dsc):
+    try:
+        cur = dsc.cursor()
+        cur.execute("SELECT * FROM messages ORDER BY id DESC LIMIT 1;")
+    except():
+        print("")
+    finally:
+        print("")
     
 
 def delete():
@@ -75,11 +85,11 @@ def disconnect(dsc):
 def main():
     dsc = connect(dsn)
     list_messages(dsc)
-    # send_message(dsc, 5, "This is a test message1.", "Kosmo Kramer")
-    # send_message(dsc, 6, "This is a test send1.", "kk@gmail.com")
-    # send_message(dsc, 7, "This is a test communication1.", "1234567890")
-    # send_message(dsc, 8, "This is a test action1.", "user_name_kosmo78")
-    # list_messages(dsc)
+    send_message(dsc, "This is a test message.", "Kosmo Kramer")
+    send_message(dsc, "This is a test send.", "kk@gmail.com")
+    send_message(dsc, "This is a test communication.", "1234567890")
+    send_message(dsc, "This is a test action.", "user_name_kosmo78")
+    list_messages(dsc)
     disconnect(dsc)
 
 
