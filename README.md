@@ -2,40 +2,24 @@
 
 MessagingService in Python
 
-## provision postgresql container
+## mongo-app
+> core_service.py
 
-docker run --name pg-container -p 5432:5432 -e POSTGRES_PASSWORD=meowmeow -d postgres
+## mongo-db
+> mongodb container actions
 
-## manual connect to db container
+docker-compose up --build
 
-psql -h localhost -p 5432 -U postgres -d messagedb
+docker inspect core-py-mongo-1
 
-## create db and messages table
+> IP may change when container is run, so need to get from inspect
+> Update IP in core_service.py
 
-postgres=# CREATE DATABASE messagedb;
-CREATE DATABASE
-postgres=#\q
+docker cp core_service.py core-py-mongo-1:/var/www/html
 
-postgres=# \c messagedb;
+docker exec -it core-py-mongo-1 /bin/bash
 
-CREATE TABLE messages (
-	id serial PRIMARY KEY NOT NULL,
-	message VARCHAR ( 50 ) NOT NULL,
-	recipient VARCHAR ( 50 ) NOT NULL
-);
+python3 /var/www/html/core_service.py
 
-## verify table
-
-SELECT *
-FROM pg_catalog.pg_tables
-WHERE schemaname != 'pg_catalog' AND 
-    schemaname != 'information_schema';
-
-SELECT
-   id,
-   message,
-   recipient
-FROM
-   messages;
-
+docker-compose down
 
