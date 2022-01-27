@@ -1,97 +1,97 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 
-import psycopg2
+# import the MongoClient class
+from xmlrpc.client import boolean
+from pymongo import MongoClient, errors
+import os
 
-dsn = "host={} dbname={} user={} password={}".format("localhost", "messagedb", "postgres", "meowmeow")
-pg_insert_query = """ INSERT INTO messages (ID, MESSAGE, RECIPIENT) VALUES (%s,%s,%s)"""
-
-def send_message(dsc, message, recipient):
-    print("Sending message...")
-    try:
-        cur = dsc.cursor()
-        # TODO fetch id of last row before doing an insert
-        record_to_insert = (id, message, recipient)
-        cur.execute(pg_insert_query, record_to_insert)
-        dsc.commit()
-        count = cur.rowcount
-        print(count, "Record inserted successfully into messages table.")
-
-    except (Exception, psycopg2.Error) as error:
-        print("Failed to insert record into messages table!", error)
-
-    finally: 
-        cur.close()
-
-def read_message():
-    try:
-        print("")
-    except():
-        print("")
-    finally:
-        print("")
+from flask import Flask, request, jsonify
+app = Flask(__name__)
 
 
-def list_messages(dsc):
-    print("Listing messages...")
-    try:
-        cur = dsc.cursor()
-        cur.execute("SELECT * FROM messages;")
-        for record in cur:
-            print(record)
+# global variables for MongoDB host (default port is 27017)
+DOMAIN = '172.18.0.2'
+PORT = 27017
 
-    except (Exception, psycopg2.Error) as error:
-        print("Failed to read records from messages table", error)
+client = MongoClient(
+            host = [ str(DOMAIN) + ":" + str(PORT) ],
+            serverSelectionTimeoutMS = 3000, # 3 second timeout
+            username = "root",
+            password = "1234",
+        )
 
-    finally:
-        cur.close()
+print ("server version:", client.server_info()["version"])
+database_names = client.list_database_names()
 
-def fetch_last_message(dsc):
-    try:
-        cur = dsc.cursor()
-        cur.execute("SELECT * FROM messages ORDER BY id DESC LIMIT 1;")
-    except():
-        print("")
-    finally:
-        print("")
+db = client.messages
+collection = db.collection
+
+
+@app.route('/')
+def root():
+    return 'MESSAGE SERVICE'
+
+
+def mark_old(message, recipient):
+    present_record = collection.find_one({"message" : message}, 
+                                         {"recipient" : recipient})
+    new_record = {'$set':{"new_state" : False}}                                   
+    collection.update_one(present_record, new_record)
     
 
-def delete():
-    try:
-        print("")
-    except():
-        print("")
-    finally:
-        print("")
+def mark_new(message, recipient):
+    present_record = collection.find_one({"message" : message}, 
+                                         {"recipient" : recipient})
+    new_record = {'$set':{"new_state" : True}}                                   
+    collection.update_one(present_record, new_record)
 
 
-def connect(dsn):
-    print("Connecting to DB.")
-    try:
-        dsc = psycopg2.connect(dsn)
-    except (Exception, psycopg2.Error) as error:
-        print("Failed to connect to database!")
-    finally:
-        print("DB connection opened.")
-        return dsc
+def delete_single(message):
+    collection.delete_one({"message" : message})
 
-def disconnect(dsc):
-    print("Disconnecting from DB.")
-    if dsc:
-        dsc.close()
-        print("DB connection is closed.")
 
-   
-def main():
-    dsc = connect(dsn)
-    list_messages(dsc)
-    send_message(dsc, "This is a test message.", "Kosmo Kramer")
-    send_message(dsc, "This is a test send.", "kk@gmail.com")
-    send_message(dsc, "This is a test communication.", "1234567890")
-    send_message(dsc, "This is a test action.", "user_name_kosmo78")
-    list_messages(dsc)
-    disconnect(dsc)
+def delete_multiple(recipient):
+    collection.delete_many({"recipient" : recipient})
+    
 
+@app.route('/messages/send', methods=['POST'])
+def store_message():
+    request_json = request.get_json()
+    print(request_json)
+    
+    # if request_json == None:
+    #     return jsonify({'error':"No valid JSON body sent."})
+
+    print("Sending message..")
+    # message_record = {
+    #     "message" : message,
+    #     "recipient" : recipient,
+    #     "new_state" : True
+    # }
+    # collection.insert_one(message_record)
+
+
+@app.route('/messages')
+def fetch_all():
+    print("Listing all messages:")
+    result = collection.find({})
+    messages_list = list()
+
+    for document in result:
+        print(document)
+        messages_list = list.append(document)
+
+    return jsonify(messages_list)
+
+
+@app.route('/messages/new')
+def fetch_new():
+    print("Listing new messages:")
+    result = collection.find({"new_state" : True})
+    for document in result:
+        print(document)
+    return result
 
 
 if __name__ == "__main__":
